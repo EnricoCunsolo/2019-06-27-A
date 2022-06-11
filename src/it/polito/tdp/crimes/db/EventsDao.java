@@ -6,6 +6,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import it.polito.tdp.crimes.model.Adiacenza;
 import it.polito.tdp.crimes.model.Event;
 
 
@@ -43,6 +45,36 @@ public class EventsDao {
 					System.out.println(res.getInt("id"));
 				}
 			}
+
+			conn.close();
+			return list ;
+
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null ;
+		}
+	}
+	
+	public List<String> listAllCategoryId(){
+		String sql = "SELECT DISTINCT offense_category_id "
+				+ "FROM events" ;
+		try {
+			Connection conn = DBConnect.getConnection() ;
+
+			PreparedStatement st = conn.prepareStatement(sql) ;
+			ResultSet rs = st.executeQuery();
+			List<String> list = new ArrayList<>() ;
+			
+			ResultSet res = st.executeQuery() ;
+			
+			while(res.next()) {
+				try {
+					list.add(rs.getString("offense_category_id"));
+				} catch (Throwable t) {
+					t.printStackTrace();
+				}
+			}
 			
 			conn.close();
 			return list ;
@@ -53,5 +85,110 @@ public class EventsDao {
 			return null ;
 		}
 	}
+	
+	public List<String> listParametresGraph(int year, String id){
+		String sql = "SELECT DISTINCT offense_type_id "
+				+ "FROM events "
+				+ "WHERE YEAR(reported_date) = ? "
+				+ "AND offense_category_id = '?'" ;
+		try {
+			Connection conn = DBConnect.getConnection() ;
+
+			PreparedStatement st = conn.prepareStatement(sql) ;
+			st.setInt(1, year);
+			st.setString(2, id);
+			ResultSet rs = st.executeQuery();
+			List<String> list = new ArrayList<>() ;
+			
+			ResultSet res = st.executeQuery() ;
+			
+			while(res.next()) {
+				try {
+					list.add(rs.getString("offense_type_id"));
+				} catch (Throwable t) {
+					t.printStackTrace();
+				}
+			}
+			
+			conn.close();
+			return list ;
+
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null ;
+		}
+	}
+	
+	public List<Integer> listAllYears(){
+		String sql = "SELECT DISTINCT YEAR(reported_date) AS n"
+				+ "FROM events" ;
+		try {
+			Connection conn = DBConnect.getConnection() ;
+
+			PreparedStatement st = conn.prepareStatement(sql) ;
+			ResultSet rs = st.executeQuery();
+			List<Integer> list = new ArrayList<>() ;
+			
+			ResultSet res = st.executeQuery() ;
+			
+			while(res.next()) {
+				try {
+					list.add(rs.getInt("n"));
+				} catch (Throwable t) {
+					t.printStackTrace();
+				}
+			}
+			
+			conn.close();
+			return list ;
+
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null ;
+		}
+	}
+	
+	public List<Adiacenza> getArchi(String cat, int mese) {
+		
+		String sql = "SELECT e1.offense_type_id as v1, e2.offense_type_id as v2, COUNT(DISTINCT e1.neighborhood_id) as peso "
+				+ "FROM eventi e1, eventi e2 "
+				+ "WHERE "
+				+ "month(e1.reported_date) = ? "
+				+ "AND month(e2.reported_date) = ? "
+				+ "AND e1.offense_category_id = ? "
+				+ "AND e2.offense_category_id = ? "
+				+ "AND e1.offense_type_id > e2.offense_type_id "
+				+ "AND e1.neighborhood_id = e2.neighborhood_id "
+				+ "GROUP BY e1.offense_type_id, e2.offense_type_id";
+		
+		try {
+			Connection conn = DBConnect.getConnection() ;
+
+			PreparedStatement st = conn.prepareStatement(sql) ;
+			st.setInt(1, mese);
+			st.setInt(2, mese);
+			st.setString(3, cat);
+			st.setString(4, cat);
+			ResultSet rs = st.executeQuery();
+			List<Adiacenza> list = new ArrayList<>() ;
+			
+			ResultSet res = st.executeQuery() ;
+			
+			while(res.next()) {
+					list.add(new Adiacenza(res.getString("v1"), res.getString("v2"), res.getInt("peso")));
+			}
+			
+			conn.close();
+			return list ;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null ;
+		}
+	}
+	
+	
 
 }
